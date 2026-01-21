@@ -23,6 +23,10 @@ export default function Home() {
   const [workTimeEnd, setWorkTimeEnd] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editNote, setEditNote] = useState('')
+  const [editWorkTime, setEditWorkTime] = useState('')
 
   useEffect(() => {
     fetchTodos()
@@ -125,6 +129,50 @@ export default function Home() {
     }
   }
 
+  const startEdit = (todo: Todo) => {
+    setEditingId(todo.id)
+    setEditTitle(todo.title)
+    setEditNote(todo.note ?? '')
+    setEditWorkTime(todo.workTime ?? '')
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditTitle('')
+    setEditNote('')
+    setEditWorkTime('')
+  }
+
+  const saveEdit = async (id: number) => {
+    if (!editTitle.trim()) {
+      setError('Tên công việc không được để trống.')
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          note: editNote.trim() || null,
+          workTime: editWorkTime.trim() || null,
+        }),
+      })
+
+      if (!response.ok) throw new Error('Failed to update todo')
+      const updatedTodo = await response.json()
+      setTodos(todos.map(todo => (todo.id === id ? updatedTodo : todo)))
+      setError(null)
+      cancelEdit()
+    } catch (err) {
+      setError('Không thể chỉnh sửa todo. Vui lòng thử lại.')
+      console.error('Error editing todo:', err)
+    }
+  }
+
   const formatDateTime = (isoString: string) => {
     const date = new Date(isoString)
     if (Number.isNaN(date.getTime())) return ''
@@ -222,28 +270,96 @@ export default function Home() {
                 onChange={() => toggleTodo(todo.id, todo.completed)}
                 className="todo-checkbox"
               />
-              <div className="todo-text">
-                <div>{todo.title}</div>
-                {todo.workTime && (
-                  <div style={{ fontSize: 13, color: '#e67e22', marginTop: 4, fontWeight: 500 }}>
-                    ⏰ {todo.workTime}
+              {editingId === todo.id ? (
+                <div className="todo-text">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="todo-input"
+                    style={{ fontSize: 15 }}
+                    placeholder="Tên công việc..."
+                  />
+                  <input
+                    type="text"
+                    value={editWorkTime}
+                    onChange={(e) => setEditWorkTime(e.target.value)}
+                    className="todo-input"
+                    style={{ fontSize: 14 }}
+                    placeholder="Thời gian làm việc (vd: 16:00 - 18:00 ngày 01/01/2026)"
+                  />
+                  <input
+                    type="text"
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    className="todo-input"
+                    style={{ fontSize: 14 }}
+                    placeholder="Ghi chú (tùy chọn)..."
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(todo.id)}
+                      className="todo-button"
+                      style={{ padding: '8px 14px', fontSize: 14 }}
+                    >
+                      Lưu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="todo-delete"
+                      style={{ background: '#6c757d' }}
+                    >
+                      Hủy
+                    </button>
                   </div>
-                )}
-                {todo.note && (
-                  <div style={{ fontSize: 13, color: '#667eea', marginTop: 4, fontStyle: 'italic' }}>
-                    📝 {todo.note}
-                  </div>
-                )}
-                <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
-                  Thêm lúc: {formatDateTime(todo.createdAt)}
                 </div>
-              </div>
-              <button
-                onClick={() => deleteTodo(todo.id)}
-                className="todo-delete"
-              >
-                Xóa
-              </button>
+              ) : (
+                <div className="todo-text">
+                  <div>{todo.title}</div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      marginTop: 4,
+                      fontWeight: 500,
+                      color: todo.workTime ? '#e67e22' : '#999',
+                    }}
+                  >
+                    ⏰ Thời gian làm: {todo.workTime || '(chưa chọn)'}
+                  </div>
+                  {todo.note && (
+                    <div style={{ fontSize: 13, color: '#667eea', marginTop: 4, fontStyle: 'italic' }}>
+                      📝 {todo.note}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
+                    Thêm lúc: {formatDateTime(todo.createdAt)}
+                  </div>
+                </div>
+              )}
+
+              {editingId !== todo.id ? (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => startEdit(todo)}
+                    className="todo-button"
+                    style={{ padding: '8px 14px', fontSize: 14, background: '#17a2b8' }}
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    onClick={() => deleteTodo(todo.id)}
+                    className="todo-delete"
+                    type="button"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              ) : (
+                <div style={{ width: 1 }} />
+              )}
             </li>
           ))}
         </ul>

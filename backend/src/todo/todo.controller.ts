@@ -9,16 +9,14 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { TodoService } from './todo.service';
-import { CreateTodoDto } from './dto/create-todo.dto';
-import { UpdateTodoDto } from './dto/update-todo.dto';
 
 @Controller('todos')
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
   @Post()
-  create(@Body() createTodoDto: CreateTodoDto) {
-    return this.todoService.create(createTodoDto);
+  create(@Body() body: any) {
+    return this.todoService.create(body);
   }
 
   @Get()
@@ -34,9 +32,9 @@ export class TodoController {
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() updateTodoDto: UpdateTodoDto,
+    @Body() body: any,
   ) {
-    return this.todoService.update(id, updateTodoDto);
+    return this.todoService.update(id, body);
   }
 
   @Delete(':id')

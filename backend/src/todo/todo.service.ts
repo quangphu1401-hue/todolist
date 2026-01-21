@@ -12,8 +12,13 @@ export class TodoService {
     private todoRepository: Repository<Todo>,
   ) {}
 
-  async create(createTodoDto: CreateTodoDto): Promise<Todo> {
-    const todo = this.todoRepository.create(createTodoDto);
+  async create(createTodoDto: CreateTodoDto | any): Promise<Todo> {
+    // Map explicitly so newly-added optional fields (note/workTime) are persisted reliably
+    const todo = this.todoRepository.create({
+      title: createTodoDto.title,
+      note: createTodoDto.note,
+      workTime: createTodoDto.workTime,
+    });
     return await this.todoRepository.save(todo);
   }
 
@@ -27,7 +32,7 @@ export class TodoService {
     return await this.todoRepository.findOne({ where: { id } });
   }
 
-  async update(id: number, updateTodoDto: UpdateTodoDto): Promise<Todo> {
+  async update(id: number, updateTodoDto: UpdateTodoDto | any): Promise<Todo> {
     await this.todoRepository.update(id, {
       ...updateTodoDto,
       updatedAt: new Date(),
