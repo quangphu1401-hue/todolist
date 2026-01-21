@@ -11,6 +11,12 @@ export class Todo {
   @Column({ default: false })
   completed: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  note: string;
+
+  @Column({ type: 'text', nullable: true })
+  workTime: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
